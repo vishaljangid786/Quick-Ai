@@ -2,7 +2,6 @@ import OpenAI from "openai";
 import sql from "../configs/db.js";
 import { v2 as cloudinary } from "cloudinary";
 import fs from "fs";
-import PDFParse from "pdf-parse";
 import { clerkClient } from "@clerk/express";
 
 const AI = new OpenAI({
@@ -11,80 +10,80 @@ const AI = new OpenAI({
 });
 
 export const resumeReview = async (req, res) => {
-  try {
-    const { userId } = req.auth();
-    const resume = req.file;
-    const plan = req.plan;
+//   try {
+//     const { userId } = req.auth();
+//     const resume = req.file;
+//     const plan = req.plan;
 
-    // ✅ plan check
-    if (plan !== "premium") {
-      return res.json({
-        success: false,
-        message: "This feature is available for premium users only.",
-      });
-    }
+//     // ✅ plan check
+//     if (plan !== "premium") {
+//       return res.json({
+//         success: false,
+//         message: "This feature is available for premium users only.",
+//       });
+//     }
 
-    // ✅ file check
-    if (!resume) {
-      return res.json({
-        success: false,
-        message: "No file uploaded",
-      });
-    }
+//     // ✅ file check
+//     if (!resume) {
+//       return res.json({
+//         success: false,
+//         message: "No file uploaded",
+//       });
+//     }
 
-    // ✅ size check
-    if (resume.size > 5 * 1024 * 1024) {
-      return res.json({
-        success: false,
-        message: "File size exceeds 5MB limit",
-      });
-    }
+//     // ✅ size check
+//     if (resume.size > 5 * 1024 * 1024) {
+//       return res.json({
+//         success: false,
+//         message: "File size exceeds 5MB limit",
+//       });
+//     }
 
-    // ✅ read file
-    const dataBuffer = fs.readFileSync(resume.path);
+//     // ✅ read file
+//     const dataBuffer = fs.readFileSync(resume.path);
 
-    // ✅ ✅ CORRECT pdf-parse v2 usage
-    const parser = new PDFParse({ data: dataBuffer });
-    const result = await parser.getText();
-    await parser.destroy();
+//     // ✅ ✅ CORRECT pdf-parse v2 usage
+//     const parser = new PDFParse({ data: dataBuffer });
+//     const result = await parser.getText();
+//     await parser.destroy();
 
-    const pdfText = result.text;
+//     const pdfText = result.text;
 
-    // ✅ cleanup file
-    fs.unlinkSync(resume.path);
+//     // ✅ cleanup file
+//     fs.unlinkSync(resume.path);
 
-    // ✅ AI prompt
-    const prompt = `Review the following resume and provide constructive feedback on strengths, weaknesses, and improvements:
+//     // ✅ AI prompt
+//     const prompt = `Review the following resume and provide constructive feedback on strengths, weaknesses, and improvements:
 
-${pdfText}`;
+// ${pdfText}`;
 
-    const response = await AI.chat.completions.create({
-      model: "gemini-2.0-flash",
-      messages: [{ role: "user", content: prompt }],
-      temperature: 0.7,
-      max_tokens: 1000,
-    });
+//     const response = await AI.chat.completions.create({
+//       model: "gemini-2.0-flash",
+//       messages: [{ role: "user", content: prompt }],
+//       temperature: 0.7,
+//       max_tokens: 1000,
+//     });
 
-    const content = response.choices[0].message.content;
+//     const content = response.choices[0].message.content;
 
-    // ✅ DB insert (correct way)
-    await sql`
-      INSERT INTO creations (user_id, prompt, content, type) 
-      VALUES (${userId}, ${"Review resume"}, ${content}, ${"resume-review"})
-    `;
+//     // ✅ DB insert (correct way)
+//     await sql`
+//       INSERT INTO creations (user_id, prompt, content, type) 
+//       VALUES (${userId}, ${"Review resume"}, ${content}, ${"resume-review"})
+//     `;
 
-    res.json({ success: true, content });
+//     res.json({ success: true, content });
 
-  } catch (error) {
-    if (error.status === 429) {
-      return res.json({
-        success: false,
-        message: "AI Rate limit reached. Please try again later.",
-      });
-    }
-    console.log(error.message);
-    res.json({ success: false, message: error.message });
-  }
+//   } catch (error) {
+//     if (error.status === 429) {
+//       return res.json({
+//         success: false,
+//         message: "AI Rate limit reached. Please try again later.",
+//       });
+//     }
+//     console.log(error.message);
+//     res.json({ success: false, message: error.message });
+//   }
 };
 
 export const generateArticle = async (req, res) => {
