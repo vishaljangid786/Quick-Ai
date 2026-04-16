@@ -2,7 +2,7 @@ import OpenAI from "openai";
 import sql from "../configs/db.js";
 import { v2 as cloudinary } from "cloudinary";
 import fs from "fs";
-import { PDFParse } from "pdf-parse";
+import PDFParse from "pdf-parse";
 import { clerkClient } from "@clerk/express";
 
 const AI = new OpenAI({
